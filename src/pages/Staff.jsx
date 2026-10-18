@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Plus, UserCog } from 'lucide-react';
 import { staffAPI } from '../lib/api';
+import useAuthStore from '../store/useAuthStore';
 import { Loading, EmptyState } from '../components/ui';
 
 export default function Staff() {
@@ -10,6 +11,8 @@ export default function Staff() {
     const [form, setForm] = useState({ name: '', email: '', password: '', role: 'SUPPORT_AGENT' });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [rowError, setRowError] = useState('');
+    const me = useAuthStore((st) => st.user);
 
     const load = useCallback(() => {
         setLoading(true);
@@ -19,8 +22,13 @@ export default function Staff() {
     useEffect(() => { load(); }, [load]);
 
     const toggleActive = async (id, isActive) => {
-        await staffAPI.setActive(id, !isActive);
-        await load();
+        setRowError('');
+        try {
+            await staffAPI.setActive(id, !isActive);
+            await load();
+        } catch (err) {
+            setRowError(err.response?.data?.message || 'Could not update this staff member');
+        }
     };
 
     const createStaff = async (e) => {
@@ -89,6 +97,8 @@ export default function Staff() {
                 </div>
             )}
 
+            {rowError && <div style={{ color: 'var(--accent-danger)', fontSize: 13, marginBottom: 12 }}>{rowError}</div>}
+
             <div className="card">
                 {loading ? (
                     <Loading />
@@ -108,9 +118,13 @@ export default function Staff() {
                                     <td>{s.isActive ? <span className="badge badge-success">Active</span> : <span className="badge badge-danger">Deactivated</span>}</td>
                                     <td>{s.lastLoginAt ? new Date(s.lastLoginAt).toLocaleString() : 'Never'}</td>
                                     <td>
-                                        <button className="btn btn-secondary btn-sm" onClick={() => toggleActive(s.id, s.isActive)}>
-                                            {s.isActive ? 'Deactivate' : 'Activate'}
-                                        </button>
+                                        {s.id === me?.id ? (
+                                            <span className="text-muted text-xs">You</span>
+                                        ) : (
+                                            <button className="btn btn-secondary btn-sm" onClick={() => toggleActive(s.id, s.isActive)}>
+                                                {s.isActive ? 'Deactivate' : 'Activate'}
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

@@ -39,7 +39,14 @@ export default function Sidebar({ collapsed, open, onClose }) {
                                 {filteredItems.map((item) => {
                                     const Icon = item.icon;
                                     const [itemPath, itemQuery = ''] = item.href.split('?');
-                                    const isActive = currentPath === itemPath && (itemQuery === '' || currentSearch === itemQuery);
+                                    // A plain link (Caregivers) must not stay lit while a sibling that
+                                    // shares its path with a filter (KYC Queue) is the active page.
+                                    const siblingFilterActive = itemQuery === '' && section.items.some((other) => {
+                                        const [otherPath, otherQuery = ''] = other.href.split('?');
+                                        return otherPath === itemPath && otherQuery !== '' && currentSearch === otherQuery;
+                                    });
+                                    const isActive = currentPath === itemPath
+                                        && (itemQuery === '' ? !siblingFilterActive : currentSearch === itemQuery);
                                     return (
                                         <Link
                                             key={item.id}

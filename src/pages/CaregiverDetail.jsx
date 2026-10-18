@@ -170,14 +170,20 @@ export default function CaregiverDetail() {
                         <DocLink label="Other documents" uploaded={profile.otherDocsUploaded} url={profile.otherDocsUrl} />
                         <DocLink label="PCC document" uploaded={profile.pccUploaded} url={profile.pccDocUrl} />
                         <div>Agreement accepted: {profile.agreementAccepted ? 'Yes' : 'No'}</div>
-                        <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-                            <button className="btn btn-success" disabled={updating || profile.kycStatus === 'ACCEPTED'} onClick={() => setKyc('ACCEPTED')}>
-                                <Check size={14} /> Approve
-                            </button>
-                            <button className="btn btn-danger" disabled={updating || profile.kycStatus === 'REJECTED'} onClick={() => setKyc('REJECTED')}>
-                                <X size={14} /> Reject
-                            </button>
-                        </div>
+                        {profile.kycStatus === 'ACCEPTED' ? (
+                            <div style={{ marginTop: 12 }}><span className="badge badge-success">KYC approved</span></div>
+                        ) : (
+                            <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                                <button className="btn btn-success" disabled={updating} onClick={() => setKyc('ACCEPTED')}>
+                                    <Check size={14} /> {profile.kycStatus === 'REJECTED' ? 'Approve instead' : 'Approve'}
+                                </button>
+                                {profile.kycStatus !== 'REJECTED' && (
+                                    <button className="btn btn-danger" disabled={updating} onClick={() => setKyc('REJECTED')}>
+                                        <X size={14} /> Reject
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
