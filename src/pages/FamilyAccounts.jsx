@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { familyAccountAPI } from '../lib/api';
-import { SearchBar, Pagination, Loading, EmptyState } from '../components/ui';
+import { SearchBar, Pagination, Loading, EmptyState, Value } from '../components/ui';
 
 export default function FamilyAccounts() {
     const [rows, setRows] = useState([]);
@@ -54,9 +54,9 @@ export default function FamilyAccounts() {
                             <tbody>
                                 {rows.map((a) => (
                                     <tr key={a.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/family-accounts/${a.id}`)}>
-                                        <td>{a.name || '—'}</td>
+                                        <td><Value>{a.name}</Value></td>
                                         <td>{a.phone}</td>
-                                        <td>{a.email || '—'}</td>
+                                        <td><Value>{a.email}</Value></td>
                                         <td>{a.links?.length || 0}</td>
                                         <td>{new Date(a.createdAt).toLocaleDateString()}</td>
                                     </tr>

@@ -86,3 +86,10 @@ export function Loading() {
         </div>
     );
 }
+
+/** A table value, or a clear "Not provided" marker when it is empty — so gaps in the data are visible, not blank. */
+export function Value({ children, missing = 'Not provided' }) {
+    const empty = children === undefined || children === null || String(children).trim() === '' || children === '—';
+    if (!empty) return <>{children}</>;
+    return <span className="badge badge-warning" style={{ fontWeight: 500 }}>{missing}</span>;
+}

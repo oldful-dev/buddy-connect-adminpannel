@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { caregiverAPI } from '../lib/api';
-import { SearchBar, StatusBadge, Pagination, Loading, EmptyState } from '../components/ui';
+import { SearchBar, StatusBadge, Pagination, Loading, EmptyState, Value } from '../components/ui';
 import { HeartHandshake } from 'lucide-react';
 
 export default function Caregivers() {
@@ -68,12 +68,12 @@ export default function Caregivers() {
                             <tbody>
                                 {rows.map(({ caregiver, profile }) => (
                                     <tr key={profile.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/caregivers/${caregiver?.id || profile.caregiverId}`)}>
-                                        <td>{caregiver?.name || '—'}</td>
+                                        <td><Value>{caregiver?.name}</Value></td>
                                         <td>{caregiver?.phone || profile.phone}</td>
                                         <td>{profile.employeeId || '—'}</td>
-                                        <td>{profile.jobRole || '—'}</td>
+                                        <td><Value missing="Role missing">{profile.jobRole}</Value></td>
                                         <td><StatusBadge status={profile.kycStatus} /></td>
-                                        <td>{caregiver?.cities?.name || '—'}</td>
+                                        <td><Value>{caregiver?.cities?.name}</Value></td>
                                     </tr>
                                 ))}
                             </tbody>

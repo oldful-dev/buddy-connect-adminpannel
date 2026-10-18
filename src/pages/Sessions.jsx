@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { LogOut, Activity } from 'lucide-react';
 import { sessionAPI } from '../lib/api';
-import { Loading, EmptyState } from '../components/ui';
+import { Loading, EmptyState, Value } from '../components/ui';
 
 export default function Sessions() {
     const [data, setData] = useState(null);
@@ -23,9 +23,9 @@ export default function Sessions() {
     if (!data) return null;
 
     const groups = [
-        { key: 'admin', label: 'Admin Sessions', rows: data.adminSessions, nameFn: (s) => s.admin?.name, subFn: (s) => s.admin?.email },
-        { key: 'caregiver', label: 'Caregiver Sessions (Buddy)', rows: data.caregiverSessions, nameFn: (s) => s.profile?.acknowledgementId, subFn: (s) => s.profile?.phone },
-        { key: 'family', label: 'Family Sessions (Connect)', rows: data.familyAccountSessions, nameFn: (s) => s.account?.name || 'Unnamed', subFn: (s) => s.account?.phone },
+        { key: 'admin', label: 'Admin Sessions', rows: data.adminSessions },
+        { key: 'caregiver', label: 'Caregiver Sessions (Buddy)', rows: data.caregiverSessions },
+        { key: 'family', label: 'Family Sessions (Connect)', rows: data.familyAccountSessions },
     ];
 
     return (
@@ -44,12 +44,14 @@ export default function Sessions() {
                         ) : (
                             <table className="data-table">
                                 <thead>
-                                    <tr><th>User</th><th>Device</th><th>IP</th><th>Last Active</th><th></th></tr>
+                                    <tr><th>Name</th><th>Email</th><th>Phone</th><th>Device</th><th>IP</th><th>Last Active</th><th></th></tr>
                                 </thead>
                                 <tbody>
                                     {g.rows.map((s) => (
                                         <tr key={s.id}>
-                                            <td>{g.nameFn(s) || '—'} <span className="text-muted text-xs">{g.subFn(s)}</span></td>
+                                            <td><Value>{s.user?.name}</Value></td>
+                                            <td><Value>{s.user?.email}</Value></td>
+                                            <td>{g.key === 'admin' ? <span className="text-muted">—</span> : <Value>{s.user?.phone}</Value>}</td>
                                             <td>{s.deviceType || '—'}</td>
                                             <td>{s.ipAddress || '—'}</td>
                                             <td>{new Date(s.lastActiveAt).toLocaleString()}</td>
