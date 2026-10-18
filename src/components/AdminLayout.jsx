@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import useAuthStore from '../store/useAuthStore';
+import { profileAPI } from '../lib/api';
 
 export default function AdminLayout() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -13,6 +14,14 @@ export default function AdminLayout() {
     useEffect(() => {
         checkAuth();
     }, [checkAuth]);
+
+    // The token only carries id + role; fetch the name/email once for the header.
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        profileAPI.get()
+            .then((res) => useAuthStore.setState((st) => ({ user: { ...(st.user || {}), name: res.data.data.name, email: res.data.data.email } })))
+            .catch(() => {});
+    }, [isAuthenticated]);
 
     useEffect(() => {
         if (!loading && !isAuthenticated) navigate('/login', { replace: true });

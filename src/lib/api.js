@@ -58,10 +58,13 @@ export const caregiverAPI = {
     getById: (id) => api.get(`/admin/caregivers/${id}`),
     setKyc: (id, status) => api.put(`/admin/caregivers/${id}/kyc`, { status }),
     createAssignment: (id, data) => api.post(`/admin/caregivers/${id}/assignments`, data),
+    update: (id, data) => api.put(`/admin/caregivers/${id}`, data),
 };
 
 export const checkInAPI = {
     getAll: (params) => api.get('/admin/check-ins', { params }),
+    getById: (id) => api.get(`/admin/check-ins/${id}`),
+    update: (id, data) => api.put(`/admin/check-ins/${id}`, data),
     remove: (id) => api.delete(`/admin/check-ins/${id}`),
 };
 
@@ -69,6 +72,7 @@ export const checkInAPI = {
 export const familyAccountAPI = {
     getAll: (params) => api.get('/admin/family-accounts', { params }),
     getById: (id) => api.get(`/admin/family-accounts/${id}`),
+    update: (id, data) => api.put(`/admin/family-accounts/${id}`, data),
 };
 
 export const patientAPI = {
@@ -86,6 +90,16 @@ export const staffAPI = {
     getAll: () => api.get('/admin/staff'),
     register: (data) => api.post('/auth/admin/register', data),
     setActive: (id, isActive) => api.put(`/admin/staff/${id}/status`, { isActive }),
+    update: (id, data) => api.put(`/admin/staff/${id}`, data),
+    remove: (id) => api.delete(`/admin/staff/${id}`),
+    requestEmailOtp: (email) => api.post('/admin/staff/verify-email/request-otp', { email }),
+};
+
+// ── My profile ────────────────────────────────────────
+export const profileAPI = {
+    get: () => api.get('/admin/me'),
+    update: (data) => api.put('/admin/me', data),
+    changePassword: (currentPassword, newPassword) => api.put('/admin/me/password', { currentPassword, newPassword }),
 };
 
 // ── Sessions ──────────────────────────────────────────
@@ -97,6 +111,7 @@ export const sessionAPI = {
 // ── Audit logs ────────────────────────────────────────
 export const auditAPI = {
     getAll: (params) => api.get('/audit-logs', { params }),
+    users: () => api.get('/audit-logs/users'),
 };
 
 export default api;

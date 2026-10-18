@@ -4,6 +4,7 @@ import { ArrowLeft, Check, X, Phone, Mail, MapPin, Calendar, CreditCard, UserPlu
 import { caregiverAPI, checkInAPI } from '../lib/api';
 import { StatusBadge, Loading } from '../components/ui';
 import PatientPicker from '../components/PatientPicker';
+import { apiError } from '../components/ui';
 
 function DocLink({ label, uploaded, url }) {
     return (
@@ -105,6 +106,10 @@ export default function CaregiverDetail() {
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
     const [showAssignForm, setShowAssignForm] = useState(false);
+    const [editingContact, setEditingContact] = useState(false);
+    const [contact, setContact] = useState({ name: '', email: '', jobRole: '' });
+    const [contactError, setContactError] = useState('');
+    const [savingContact, setSavingContact] = useState(false);
 
     const load = useCallback(() => {
         setLoading(true);
@@ -120,6 +125,30 @@ export default function CaregiverDetail() {
             await load();
         } finally {
             setUpdating(false);
+        }
+    };
+
+    const startEditContact = () => {
+        setContact({ name: data.caregiver?.name || '', email: data.caregiver?.email || '', jobRole: data.profile.jobRole || '' });
+        setContactError('');
+        setEditingContact(true);
+    };
+
+    const saveContact = async (e) => {
+        e.preventDefault();
+        if (!/^[\p{L}][\p{L} .'-]{1,59}$/u.test(contact.name.trim())) { setContactError('Please enter a valid name containing only letters.'); return; }
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact.email.trim())) { setContactError('Please enter a valid email address.'); return; }
+        if (!contact.jobRole) { setContactError('Please select a job role.'); return; }
+        setSavingContact(true);
+        setContactError('');
+        try {
+            await caregiverAPI.update(caregiverId, { name: contact.name.trim(), email: contact.email.trim(), jobRole: contact.jobRole });
+            setEditingContact(false);
+            await load();
+        } catch (err) {
+            setContactError(apiError(err, 'Could not save changes'));
+        } finally {
+            setSavingContact(false);
         }
     };
 
@@ -146,7 +175,34 @@ export default function CaregiverDetail() {
 
             <div className="grid-2">
                 <div className="card">
-                    <div className="card-header"><h3>Profile</h3></div>
+                    <div className="card-header">
+                        <h3>Profile</h3>
+                        {!editingContact && <button className="btn btn-secondary btn-sm" onClick={startEditContact}>Edit contact</button>}
+                    </div>
+                    {editingContact && (
+                        <form className="card-body" style={{ borderBottom: '1px solid var(--border-color)' }} onSubmit={saveContact}>
+                            <div className="form-group">
+                                <label className="form-label">Name</label>
+                                <input className="form-input" value={contact.name} maxLength={60} onChange={(e) => setContact({ ...contact, name: e.target.value })} required />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Email</label>
+                                <input type="email" className="form-input" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} required />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Job role</label>
+                                <select className="form-select" value={contact.jobRole} onChange={(e) => setContact({ ...contact, jobRole: e.target.value })} required>
+                                    <option value="">Select a role</option>
+                                    {['Nurse', 'Caregiver', 'Attendant', 'Physiotherapist', 'Home Health Aide'].map((r) => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                            </div>
+                            {contactError && <div style={{ color: 'var(--accent-danger)', fontSize: 13, marginBottom: 12 }}>{contactError}</div>}
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <button type="submit" className="btn btn-primary btn-sm" disabled={savingContact}>{savingContact ? 'Saving…' : 'Save'}</button>
+                                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEditingContact(false)} disabled={savingContact}>Cancel</button>
+                            </div>
+                        </form>
+                    )}
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div className="flex items-center gap-2"><Phone size={14} className="text-muted" /> {caregiver?.phone || profile.phone}</div>
                         <div className="flex items-center gap-2"><Mail size={14} className="text-muted" /> {caregiver?.email || '—'}</div>

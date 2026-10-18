@@ -43,8 +43,8 @@ export default function Header({ onToggleSidebar, onMobileMenu }) {
                                 <span>{user?.role?.replace('_', ' ') || 'Admin'}</span>
                             </div>
                             <div className="dropdown-divider" />
-                            <Link to="/staff" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
-                                <User size={16} /> Staff
+                            <Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                                <User size={16} /> Profile Settings
                             </Link>
                             <div className="dropdown-divider" />
                             <button className="dropdown-item logout" onClick={handleLogout} style={{ width: '100%' }}>

@@ -1,8 +1,19 @@
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 
-export function StatCard({ icon: Icon, color = 'purple', label, value }) {
+export function StatCard({ icon: Icon, color = 'purple', label, value, to }) {
+    const navigate = useNavigate();
+    const clickable = !!to;
     return (
-        <div className="stat-card">
+        <div
+            className="stat-card"
+            role={clickable ? 'link' : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            style={clickable ? { cursor: 'pointer' } : undefined}
+            onClick={clickable ? () => navigate(to) : undefined}
+            onKeyDown={clickable ? (e) => { if (e.key === 'Enter') navigate(to); } : undefined}
+            title={clickable ? `Open ${label}` : undefined}
+        >
             <div className="stat-card-header">
                 <div className={`stat-card-icon ${color}`}>
                     <Icon size={22} />
@@ -93,3 +104,59 @@ export function Value({ children, missing = 'Not provided' }) {
     if (!empty) return <>{children}</>;
     return <span className="badge badge-warning" style={{ fontWeight: 500 }}>{missing}</span>;
 }
+
+export function ErrorState({ message = 'Something went wrong', onRetry }) {
+    return (
+        <div className="empty-state">
+            <h4>{message}</h4>
+            {onRetry && <button className="btn btn-primary btn-sm" style={{ marginTop: 12 }} onClick={onRetry}>Try again</button>}
+        </div>
+    );
+}
+
+export function Modal({ title, onClose, children, footer }) {
+    return (
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+            <div className="modal" role="dialog" aria-modal="true">
+                <div className="modal-header">
+                    <h3>{title}</h3>
+                    <button className="btn btn-icon btn-secondary" onClick={onClose} aria-label="Close"><X size={16} /></button>
+                </div>
+                <div className="modal-body">{children}</div>
+                {footer && <div className="modal-footer">{footer}</div>}
+            </div>
+        </div>
+    );
+}
+
+export function ConfirmDialog({ title, message, confirmLabel = 'Confirm', danger = false, busy = false, error, onConfirm, onCancel }) {
+    return (
+        <Modal
+            title={title}
+            onClose={onCancel}
+            footer={(
+                <>
+                    <button className="btn btn-secondary" onClick={onCancel} disabled={busy}>Cancel</button>
+                    <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} onClick={onConfirm} disabled={busy}>
+                        {busy ? 'Working…' : confirmLabel}
+                    </button>
+                </>
+            )}
+        >
+            <p style={{ margin: 0 }}>{message}</p>
+            {error && <div style={{ color: 'var(--accent-danger)', fontSize: 13, marginTop: 12 }}>{error}</div>}
+        </Modal>
+    );
+}
+
+/** Maps link for an address string. */
+export function MapLink({ address }) {
+    if (!address) return null;
+    return (
+        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ fontSize: 12, marginLeft: 6 }}>
+            Map
+        </a>
+    );
+}
+
+export const apiError = (err, fallback = 'Something went wrong') => err?.response?.data?.message || fallback;

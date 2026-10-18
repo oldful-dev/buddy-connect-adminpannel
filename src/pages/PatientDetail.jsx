@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Phone, Calendar } from 'lucide-react';
 import { patientAPI, careTeamAPI } from '../lib/api';
-import { StatusBadge, Loading } from '../components/ui';
+import { StatusBadge, Loading, ErrorState, MapLink, Value, apiError } from '../components/ui';
 
 export default function PatientDetail() {
     const { patientUserId } = useParams();
@@ -12,10 +12,16 @@ export default function PatientDetail() {
     const [showAddForm, setShowAddForm] = useState(false);
     const [form, setForm] = useState({ name: '', role: '', phone: '' });
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+    const [timelineFilter, setTimelineFilter] = useState('ALL');
 
     const load = useCallback(() => {
         setLoading(true);
-        patientAPI.getById(patientUserId).then((res) => setData(res.data.data)).finally(() => setLoading(false));
+        setError('');
+        patientAPI.getById(patientUserId)
+            .then((res) => setData(res.data.data))
+            .catch((err) => setError(apiError(err, 'Could not load this patient')))
+            .finally(() => setLoading(false));
     }, [patientUserId]);
 
     useEffect(() => { load(); }, [load]);
@@ -40,9 +46,11 @@ export default function PatientDetail() {
     };
 
     if (loading) return <Loading />;
-    if (!data) return null;
+    if (error || !data) return <ErrorState message={error || 'Patient not found'} onRetry={load} />;
 
-    const { patient, careTeam, serviceVisits, uploads, linkedFamilyAccounts } = data;
+    const { patient, careTeam, serviceVisits, uploads, linkedFamilyAccounts, checkIns = [], healthReports = [], caregiverUploads = [], timeline = [], defaultAddress } = data;
+    const TYPES = ['ALL', ...new Set(timeline.map((e) => e.type))];
+    const shownTimeline = timelineFilter === 'ALL' ? timeline : timeline.filter((e) => e.type === timelineFilter);
 
     return (
         <>
@@ -60,9 +68,10 @@ export default function PatientDetail() {
                     <div className="card-header"><h3>Patient</h3></div>
                     <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div className="flex items-center gap-2"><Phone size={14} className="text-muted" /> {patient.phone}</div>
-                        <div>Email: {patient.email || '—'}</div>
+                        <div>Email: <Value>{patient.email}</Value></div>
                         <div className="flex items-center gap-2"><Calendar size={14} className="text-muted" /> DOB: {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : '—'}</div>
                         <div>Health Tag: {patient.healthTag}</div>
+                        <div>Address: <Value missing="No saved address">{defaultAddress?.text}</Value> <MapLink address={defaultAddress?.text} /></div>
                     </div>
                 </div>
 
@@ -184,6 +193,108 @@ export default function PatientDetail() {
                             </table>
                         )}
                     </div>
+                </div>
+            </div>
+
+            <div className="card" style={{ marginTop: 24 }}>
+                <div className="card-header"><h3>Visit history — check-ins ({checkIns.length})</h3></div>
+                <div className="card-body" style={{ padding: 0 }}>
+                    {checkIns.length === 0 ? (
+                        <div style={{ padding: 24, color: 'var(--text-muted)' }}>No caregiver visits yet.</div>
+                    ) : (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table className="data-table">
+                                <thead><tr><th>Status</th><th>Caregiver</th><th>Category</th><th>Shift</th><th>Checked in / out</th><th>Summary</th></tr></thead>
+                                <tbody>
+                                    {checkIns.map((c) => (
+                                        <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/check-ins/${c.id}`)}>
+                                            <td>{c.checkedIn ? <span className="badge badge-success">Checked In</span> : c.checkOutTime ? <span className="badge badge-default">Completed</span> : <span className="badge badge-warning">Scheduled</span>}</td>
+                                            <td>{c.caregiverName}</td>
+                                            <td>{c.caregiverRole || '—'}</td>
+                                            <td className="text-xs" style={{ whiteSpace: 'nowrap' }}>{new Date(c.shiftStart).toLocaleString()}</td>
+                                            <td className="text-xs">{c.checkInTime ? new Date(c.checkInTime).toLocaleString() : '—'}<br />{c.checkOutTime ? new Date(c.checkOutTime).toLocaleString() : '—'}</td>
+                                            <td style={{ maxWidth: 260, overflowWrap: 'anywhere' }} className="text-xs">{c.careSummary || '—'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="grid-2" style={{ marginTop: 24 }}>
+                <div className="card">
+                    <div className="card-header"><h3>Medical records ({healthReports.length})</h3></div>
+                    <div className="card-body" style={{ padding: 0 }}>
+                        {healthReports.length === 0 ? (
+                            <div style={{ padding: 24, color: 'var(--text-muted)' }}>No medical records on file.</div>
+                        ) : (
+                            <table className="data-table">
+                                <thead><tr><th>Report</th><th>Type</th><th>Date</th><th>Flag</th></tr></thead>
+                                <tbody>
+                                    {healthReports.map((r) => (
+                                        <tr key={r.id}>
+                                            <td style={{ overflowWrap: 'anywhere' }}>{r.title}</td>
+                                            <td>{r.fileType}</td>
+                                            <td>{new Date(r.reportDate).toLocaleDateString()}</td>
+                                            <td>{r.flagSeverity ? <span className="badge badge-warning" title={r.flagNote || ''}>{r.flagSeverity}</span> : '—'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+
+                <div className="card">
+                    <div className="card-header"><h3>Documents from caregivers ({caregiverUploads.length})</h3></div>
+                    <div className="card-body" style={{ padding: 0 }}>
+                        {caregiverUploads.length === 0 ? (
+                            <div style={{ padding: 24, color: 'var(--text-muted)' }}>No documents uploaded by caregivers.</div>
+                        ) : (
+                            <table className="data-table">
+                                <thead><tr><th>File</th><th>Category</th><th>By</th><th>Date</th></tr></thead>
+                                <tbody>
+                                    {caregiverUploads.map((u) => (
+                                        <tr key={u.id}>
+                                            <td style={{ overflowWrap: 'anywhere' }}>{u.fileName}</td>
+                                            <td>{u.category}</td>
+                                            <td>{u.uploadedBy}</td>
+                                            <td>{new Date(u.uploadedAt).toLocaleDateString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="card" style={{ marginTop: 24 }}>
+                <div className="card-header" style={{ flexWrap: 'wrap', gap: 12 }}>
+                    <h3>Activity timeline ({shownTimeline.length})</h3>
+                    <select className="form-select" style={{ maxWidth: 220 }} value={timelineFilter} onChange={(e) => setTimelineFilter(e.target.value)}>
+                        {TYPES.map((t) => <option key={t} value={t}>{t === 'ALL' ? 'All activity' : t.replace(/_/g, ' ')}</option>)}
+                    </select>
+                </div>
+                <div className="card-body">
+                    {shownTimeline.length === 0 ? (
+                        <span className="text-muted">No activity recorded yet.</span>
+                    ) : (
+                        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                            {shownTimeline.map((e, i) => (
+                                <li key={i} style={{ display: 'flex', gap: 14, padding: '10px 0', borderBottom: '1px solid var(--border-color)' }}>
+                                    <div className="text-muted text-xs" style={{ width: 140, flexShrink: 0 }}>{new Date(e.at).toLocaleString()}</div>
+                                    <div style={{ minWidth: 0 }}>
+                                        <span className="badge badge-purple" style={{ marginRight: 8 }}>{e.type.replace(/_/g, ' ')}</span>
+                                        <strong>{e.title}</strong>
+                                        {e.detail && <div className="text-muted text-xs" style={{ overflowWrap: 'anywhere' }}>{e.detail}</div>}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             </div>
         </>
