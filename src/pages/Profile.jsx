@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { profileAPI } from '../lib/api';
 import useAuthStore from '../store/useAuthStore';
+import { isValidName } from '../lib/validators';
 import { Loading, ErrorState, apiError } from '../components/ui';
 
-const NAME_RE = /^[\p{L}][\p{L} .'-]{1,59}$/u;
 const MOBILE_RE = /^[6-9]\d{9}$/;
 
 export default function Profile() {
@@ -34,7 +34,7 @@ export default function Profile() {
     const saveProfile = async (e) => {
         e.preventDefault();
         setFormMsg({ type: '', text: '' });
-        if (!NAME_RE.test(form.name.trim())) { setFormMsg({ type: 'error', text: 'Please enter a valid name containing only letters.' }); return; }
+        if (!isValidName(form.name.trim())) { setFormMsg({ type: 'error', text: 'Please enter a valid name containing only letters.' }); return; }
         if (form.phone.trim() && !MOBILE_RE.test(form.phone)) { setFormMsg({ type: 'error', text: 'Please enter a valid 10-digit mobile number.' }); return; }
         setSaving(true);
         try {

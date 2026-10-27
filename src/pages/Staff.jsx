@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Plus, UserCog, Pencil, Trash2, MailCheck } from 'lucide-react';
 import { staffAPI } from '../lib/api';
 import useAuthStore from '../store/useAuthStore';
+import { isValidName } from '../lib/validators';
 import { Loading, EmptyState, ErrorState, Modal, ConfirmDialog, apiError } from '../components/ui';
 
 const ROLES = [
@@ -10,7 +11,6 @@ const ROLES = [
     { id: 'SUPER_ADMIN', label: 'Super Admin' },
 ];
 
-const NAME_RE = /^[\p{L}][\p{L} .'-]{1,59}$/u;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MOBILE_RE = /^[6-9]\d{9}$/;
 
@@ -61,7 +61,7 @@ export default function Staff() {
     };
 
     const validateNewStaff = () => {
-        if (!NAME_RE.test(form.name.trim())) return 'Please enter a valid name containing only letters.';
+        if (!isValidName(form.name.trim())) return 'Please enter a valid name containing only letters.';
         if (!EMAIL_RE.test(form.email.trim())) return 'Please enter a valid email address.';
         if (form.phone.trim() && !MOBILE_RE.test(form.phone.replace(/\D/g, '').slice(-10))) return 'Please enter a valid 10-digit mobile number.';
         if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/\d/.test(form.password)) return 'Password must be at least 8 characters with a letter and a number.';
@@ -123,7 +123,7 @@ export default function Staff() {
 
     const saveEdit = async (e) => {
         e.preventDefault();
-        if (!NAME_RE.test(editForm.name.trim())) { setEditError('Please enter a valid name containing only letters.'); return; }
+        if (!isValidName(editForm.name.trim())) { setEditError('Please enter a valid name containing only letters.'); return; }
         if (editForm.phone.trim() && !MOBILE_RE.test(editForm.phone.replace(/\D/g, '').slice(-10))) { setEditError('Please enter a valid 10-digit mobile number.'); return; }
         setBusy(true);
         setEditError('');

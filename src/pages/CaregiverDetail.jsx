@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { isValidName } from '../lib/validators';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, X, Phone, Mail, MapPin, Calendar, CreditCard, UserPlus, Trash2, FileText, ExternalLink } from 'lucide-react';
 import { caregiverAPI, checkInAPI } from '../lib/api';
@@ -136,7 +137,7 @@ export default function CaregiverDetail() {
 
     const saveContact = async (e) => {
         e.preventDefault();
-        if (!/^[\p{L}][\p{L} .'-]{1,59}$/u.test(contact.name.trim())) { setContactError('Please enter a valid name containing only letters.'); return; }
+        if (!isValidName(contact.name.trim())) { setContactError('Please enter a valid name containing only letters.'); return; }
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact.email.trim())) { setContactError('Please enter a valid email address.'); return; }
         if (!contact.jobRole) { setContactError('Please select a job role.'); return; }
         setSavingContact(true);

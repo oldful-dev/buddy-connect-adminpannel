@@ -2,9 +2,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, Mail, Calendar, Pencil, Bell } from 'lucide-react';
 import { familyAccountAPI } from '../lib/api';
+import { isValidName } from '../lib/validators';
 import { Loading, ErrorState, Value, apiError } from '../components/ui';
 
-const NAME_RE = /^[\p{L}][\p{L} .'-]{1,59}$/u;
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export default function FamilyAccountDetail() {
@@ -37,7 +37,7 @@ export default function FamilyAccountDetail() {
 
     const save = async (e) => {
         e.preventDefault();
-        if (!NAME_RE.test(form.name.trim())) { setFormError('Name is required and must contain only letters.'); return; }
+        if (!isValidName(form.name.trim())) { setFormError('Name is required and must contain only letters.'); return; }
         if (form.email.trim() && !EMAIL_RE.test(form.email.trim())) { setFormError('Please enter a valid email address.'); return; }
         setSaving(true);
         setFormError('');

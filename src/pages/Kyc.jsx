@@ -20,6 +20,22 @@ function DocButton({ label, url, uploaded }) {
     );
 }
 
+/** Hours a submission has been waiting for review (since its last change). */
+const hoursWaiting = (profile) => Math.max(0, Math.floor((Date.now() - new Date(profile.updatedAt).getTime()) / 3600000));
+
+function Waiting({ profile }) {
+    if (profile.kycStatus !== 'PENDING_VERIFICATION') return null;
+    const h = hoursWaiting(profile);
+    const late = h >= 4;
+    return (
+        <div style={{ marginTop: 4 }}>
+            <span className={`badge ${late ? 'badge-danger' : 'badge-default'}`} title="Time since this submission was last updated">
+                {h < 1 ? 'Waiting < 1h' : `Waiting ${h}h`}{late ? ' — review now' : ''}
+            </span>
+        </div>
+    );
+}
+
 export default function Kyc() {
     const navigate = useNavigate();
     const [tab, setTab] = useState('PENDING_VERIFICATION');
@@ -37,7 +53,9 @@ export default function Kyc() {
         setError('');
         caregiverAPI.getAll({ page, limit: 20, search: search || undefined, kycStatus: tab })
             .then((res) => {
-                setRows(res.data.data);
+                // Oldest submissions first so nothing sits unreviewed.
+                const data = res.data.data;
+                setRows(tab === 'PENDING_VERIFICATION' ? [...data].sort((a, b) => new Date(a.profile.updatedAt) - new Date(b.profile.updatedAt)) : data);
                 setPagination(res.data.pagination);
             })
             .catch((err) => setError(apiError(err, 'Could not load the KYC queue')))
@@ -110,7 +128,7 @@ export default function Kyc() {
                                                         <DocButton label="PCC" url={profile.pccDocUrl} uploaded={profile.pccUploaded} />
                                                     </div>
                                                 </td>
-                                                <td><StatusBadge status={profile.kycStatus} /></td>
+                                                <td><StatusBadge status={profile.kycStatus} /><Waiting profile={profile} /></td>
                                                 <td>
                                                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                                         {profile.kycStatus !== 'ACCEPTED' && (
